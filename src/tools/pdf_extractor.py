@@ -1,56 +1,62 @@
 """
 PDF text extraction with OCR fallback.
-Handles missing dependencies gracefully for production environments.
+Uses PyMuPDF + EasyOCR for zero system dependency OCR.
+Falls back gracefully if OCR libraries are not available.
 """
 
 import pdfplumber
 from PIL import Image
 import numpy as np
-from typing import Tuple, List, Optional
-import warnings
+from typing import Tuple, List
+import io
 
-# Check for optional OCR dependencies
-OCR_AVAILABLE = False
-POPPLER_ERROR = None
-TESSERACT_ERROR = None
-
-try:
-    from pdf2image import convert_from_path
-    # Test if poppler is actually available
-    OCR_AVAILABLE = True
-except ImportError as e:
-    POPPLER_ERROR = "pdf2image not installed. Install with: pip install pdf2image"
-except Exception as e:
-    POPPLER_ERROR = str(e)
+# Check for optional OCR dependencies (PyMuPDF + EasyOCR - no system deps needed!)
+PYMUPDF_AVAILABLE = False
+EASYOCR_AVAILABLE = False
+EASYOCR_READER = None
 
 try:
-    import pytesseract
+    import fitz  # PyMuPDF
+    PYMUPDF_AVAILABLE = True
 except ImportError:
-    TESSERACT_ERROR = "pytesseract not installed. Install with: pip install pytesseract"
-except Exception as e:
-    TESSERACT_ERROR = str(e)
+    pass
 
 try:
-    import cv2
+    import easyocr
+    EASYOCR_AVAILABLE = True
 except ImportError:
-    cv2 = None
+    pass
 
 
 class PDFExtractor:
     """
-    Handles PDF text extraction with fallback to OCR.
+    Handles PDF text extraction with OCR fallback.
     
-    OCR requires optional system dependencies:
-    - Poppler: https://github.com/osber/poppler-windows/releases (Windows)
-    - Tesseract: https://github.com/UB-Mannheim/tesseract/wiki
+    Uses PyMuPDF + EasyOCR for scanned documents.
+    No system dependencies required (no Poppler, no Tesseract).
     
-    If these are not installed, scanned PDFs will return an error message
-    but digital PDFs will still work via pdfplumber.
+    For digital PDFs: Uses pdfplumber (fast, accurate)
+    For scanned PDFs: Uses PyMuPDF to render images + EasyOCR for text recognition
     """
     
     def __init__(self):
         self.confidence_threshold = 0.7
-        self._ocr_warning_shown = False
+        self._ocr_reader = None
+        self._ocr_init_attempted = False
+    
+    def _get_ocr_reader(self):
+        """Lazy initialization of EasyOCR reader (downloads models on first use)"""
+        if self._ocr_reader is None and not self._ocr_init_attempted:
+            self._ocr_init_attempted = True
+            if EASYOCR_AVAILABLE:
+                try:
+                    import easyocr
+                    print("🔄 Initializing EasyOCR (first run may download models)...")
+                    self._ocr_reader = easyocr.Reader(['en'], gpu=False, verbose=False)
+                    print("✅ EasyOCR initialized successfully")
+                except Exception as e:
+                    print(f"⚠️  Failed to initialize EasyOCR: {e}")
+        return self._ocr_reader
     
     def extract_text(self, pdf_path: str) -> Tuple[str, float, str]:
         """
@@ -81,165 +87,100 @@ class PDFExtractor:
     
     def _ocr_extraction(self, pdf_path: str) -> Tuple[str, float, str]:
         """
-        OCR-based extraction with preprocessing.
-        Returns helpful error if dependencies are missing.
+        OCR-based extraction using PyMuPDF + EasyOCR.
+        No system dependencies required!
         """
-        # Check for missing dependencies
-        if POPPLER_ERROR or not OCR_AVAILABLE:
-            error_msg = self._get_ocr_dependency_message()
-            if not self._ocr_warning_shown:
-                print(f"⚠️  OCR unavailable: {error_msg}")
-                self._ocr_warning_shown = True
+        # Check for PyMuPDF
+        if not PYMUPDF_AVAILABLE:
             return (
-                f"[OCR EXTRACTION FAILED]\n"
-                f"This appears to be a scanned document requiring OCR.\n"
-                f"Error: {error_msg}\n\n"
-                f"To enable OCR processing, install:\n"
-                f"1. Poppler: https://github.com/osber/poppler-windows/releases\n"
-                f"2. Tesseract: https://github.com/UB-Mannheim/tesseract/wiki\n"
-                f"3. Add both to your system PATH",
+                "[OCR EXTRACTION FAILED]\n"
+                "PyMuPDF not installed.\n\n"
+                "Install with: pip install pymupdf",
                 0.0,
                 "ocr_unavailable"
             )
         
-        if TESSERACT_ERROR:
+        # Check for EasyOCR
+        if not EASYOCR_AVAILABLE:
             return (
-                f"[OCR EXTRACTION FAILED]\n"
-                f"Tesseract OCR not available: {TESSERACT_ERROR}",
+                "[OCR EXTRACTION FAILED]\n"
+                "EasyOCR not installed.\n\n"
+                "Install with: pip install easyocr",
                 0.0,
                 "ocr_unavailable"
             )
         
-        # Attempt OCR extraction
+        # Get or initialize OCR reader
+        reader = self._get_ocr_reader()
+        if reader is None:
+            return (
+                "[OCR EXTRACTION FAILED]\n"
+                "Failed to initialize EasyOCR reader.",
+                0.0,
+                "ocr_unavailable"
+            )
+        
         try:
-            from pdf2image import convert_from_path
-            import pytesseract
+            import fitz  # PyMuPDF
             
-            images = convert_from_path(pdf_path)
             full_text = ""
             confidences = []
             
-            for img in images:
-                # Preprocess image if OpenCV is available
-                if cv2 is not None:
-                    processed_img = self._preprocess_image(img)
-                else:
-                    processed_img = img
+            # Open PDF with PyMuPDF
+            doc = fitz.open(pdf_path)
+            
+            for page_num in range(len(doc)):
+                page = doc[page_num]
                 
-                # OCR with confidence
-                data = pytesseract.image_to_data(
-                    processed_img, 
-                    output_type=pytesseract.Output.DICT
-                )
+                # Render page to image (300 DPI for good quality)
+                mat = fitz.Matrix(300/72, 300/72)  # 300 DPI
+                pix = page.get_pixmap(matrix=mat)
                 
-                text = " ".join([
-                    data['text'][i] 
-                    for i in range(len(data['text'])) 
-                    if int(data['conf'][i]) > 0
-                ])
+                # Convert to PIL Image
+                img_data = pix.tobytes("png")
+                img = Image.open(io.BytesIO(img_data))
                 
-                valid_confs = [
-                    int(data['conf'][i]) 
-                    for i in range(len(data['conf'])) 
-                    if int(data['conf'][i]) > 0
-                ]
+                # Convert to numpy array for EasyOCR
+                img_array = np.array(img)
                 
-                if valid_confs:
-                    conf = np.mean(valid_confs) / 100.0
-                else:
-                    conf = 0.0
+                # Run OCR
+                results = reader.readtext(img_array)
                 
-                full_text += text + "\n"
-                confidences.append(conf)
+                # Extract text and confidence from results
+                page_text = ""
+                page_confidences = []
+                
+                for (bbox, text, conf) in results:
+                    page_text += text + " "
+                    page_confidences.append(conf)
+                
+                full_text += f"{page_text.strip()}\n"
+                
+                if page_confidences:
+                    confidences.append(np.mean(page_confidences))
+            
+            doc.close()
             
             avg_conf = np.mean(confidences) if confidences else 0.0
             quality = self._assess_quality(avg_conf)
             
+            if not full_text.strip():
+                return (
+                    "[OCR EXTRACTION FAILED]\n"
+                    "No text could be extracted from the scanned document.",
+                    0.0,
+                    "poor"
+                )
+            
             return full_text.strip(), avg_conf, quality
             
         except Exception as e:
-            error_msg = str(e)
-            
-            # Provide helpful messages for common errors
-            if "poppler" in error_msg.lower() or "Unable to get page count" in error_msg:
-                return (
-                    f"[OCR EXTRACTION FAILED]\n"
-                    f"Poppler is not installed or not in PATH.\n\n"
-                    f"Install Poppler:\n"
-                    f"- Windows: https://github.com/osber/poppler-windows/releases\n"
-                    f"- Add the 'bin' folder to your system PATH\n"
-                    f"- Restart your terminal/IDE after installation",
-                    0.0,
-                    "ocr_unavailable"
-                )
-            elif "tesseract" in error_msg.lower():
-                return (
-                    f"[OCR EXTRACTION FAILED]\n"
-                    f"Tesseract OCR is not installed or not in PATH.\n\n"
-                    f"Install Tesseract:\n"
-                    f"- Windows: https://github.com/UB-Mannheim/tesseract/wiki\n"
-                    f"- Add installation folder to your system PATH",
-                    0.0,
-                    "ocr_unavailable"
-                )
-            else:
-                return (
-                    f"[OCR EXTRACTION FAILED]\n"
-                    f"Unexpected error during OCR: {error_msg}",
-                    0.0,
-                    "ocr_unavailable"
-                )
-    
-    def _get_ocr_dependency_message(self) -> str:
-        """Get a helpful message about missing OCR dependencies"""
-        messages = []
-        if POPPLER_ERROR:
-            messages.append(f"Poppler: {POPPLER_ERROR}")
-        if TESSERACT_ERROR:
-            messages.append(f"Tesseract: {TESSERACT_ERROR}")
-        return "; ".join(messages) if messages else "OCR dependencies not available"
-    
-    def _preprocess_image(self, img: Image.Image) -> Image.Image:
-        """Image preprocessing for better OCR"""
-        # Convert to numpy array
-        img_array = np.array(img)
-        
-        # Convert to grayscale
-        gray = cv2.cvtColor(img_array, cv2.COLOR_RGB2GRAY)
-        
-        # Deskew
-        gray = self._deskew(gray)
-        
-        # Denoise
-        gray = cv2.fastNlMeansDenoising(gray)
-        
-        # Binarization
-        _, binary = cv2.threshold(
-            gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
-        )
-        
-        return Image.fromarray(binary)
-    
-    def _deskew(self, image: np.ndarray) -> np.ndarray:
-        """Correct image rotation"""
-        coords = np.column_stack(np.where(image > 0))
-        angle = cv2.minAreaRect(coords)[-1]
-        
-        if angle < -45:
-            angle = -(90 + angle)
-        else:
-            angle = -angle
-        
-        (h, w) = image.shape[:2]
-        center = (w // 2, h // 2)
-        M = cv2.getRotationMatrix2D(center, angle, 1.0)
-        rotated = cv2.warpAffine(
-            image, M, (w, h),
-            flags=cv2.INTER_CUBIC,
-            borderMode=cv2.BORDER_REPLICATE
-        )
-        
-        return rotated
+            return (
+                f"[OCR EXTRACTION FAILED]\n"
+                f"Error during OCR processing: {str(e)}",
+                0.0,
+                "ocr_unavailable"
+            )
     
     def _assess_quality(self, confidence: float) -> str:
         """Assess document quality based on confidence"""
@@ -253,11 +194,15 @@ class PDFExtractor:
             return "poor"
     
     def extract_tables(self, pdf_path: str) -> List[List[List[str]]]:
-        """Extract tables from PDF"""
-        with pdfplumber.open(pdf_path) as pdf:
-            tables = []
-            for page in pdf.pages:
-                page_tables = page.extract_tables()
-                if page_tables:
-                    tables.extend(page_tables)
-            return tables
+        """Extract tables from PDF using pdfplumber"""
+        try:
+            with pdfplumber.open(pdf_path) as pdf:
+                tables = []
+                for page in pdf.pages:
+                    page_tables = page.extract_tables()
+                    if page_tables:
+                        tables.extend(page_tables)
+                return tables
+        except Exception as e:
+            print(f"⚠️  Table extraction failed: {e}")
+            return []

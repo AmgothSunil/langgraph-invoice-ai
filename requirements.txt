@@ -18,6 +18,9 @@ opencv-python
 pytesseract
 paddleocr
 pillow
+pymupdf 
+easyocr
+
 
 # Fuzzy matching
 rapidfuzz
