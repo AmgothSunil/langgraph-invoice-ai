@@ -1,0 +1,45 @@
+# Core LLM + Agents
+langgraph
+langchain
+langchain-community
+langchain-openai
+openai
+langchain-groq
+langchain-google-genai
+
+# Data validation
+pydantic
+
+# OCR & Document Processing
+pdfplumber
+pypdf2
+pdf2image
+opencv-python
+pytesseract
+paddleocr
+pillow
+
+# Fuzzy matching
+rapidfuzz
+fuzzywuzzy
+python-Levenshtein
+
+# Embeddings
+sentence-transformers
+
+# API / Backend (optional but impressive)
+fastapi
+uvicorn
+python-multipart
+
+# Utilities
+python-dotenv
+numpy
+
+# Logging & Monitoring
+loguru
+tenacity
+
+# Testing
+pytest
+pytest-asyncio

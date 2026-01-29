@@ -1,0 +1,121 @@
+{
+  "invoice_id": "GPS-8842",
+  "processing_timestamp": "2026-01-29T14:41:52.997505Z",
+  "processing_duration_seconds": 88.5805938243866,
+  "document_info": {
+    "filename": "Invoice_4_Price_Trap.pdf",
+    "file_size_kb": 3.0380859375,
+    "page_count": 1,
+    "document_quality": "excellent"
+  },
+  "processing_results": {
+    "extraction_confidence": 0.95,
+    "document_quality": "excellent",
+    "extracted_data": {
+      "invoice_number": "GPS-8842",
+      "invoice_date": "2024-01-25",
+      "supplier_name": "Global Pharma Supply Co.",
+      "supplier_address": null,
+      "supplier_vat": null,
+      "po_reference": "PO-2024-004",
+      "payment_terms": null,
+      "currency": "GBP",
+      "line_items": [
+        {
+          "item_code": "GPS-A101",
+          "description": "Ibuprofen BP 200mg",
+          "quantity": 100.0,
+          "unit": "kg",
+          "unit_price": 88.0,
+          "line_total": 8800.0,
+          "extraction_confidence": 0.99
+        },
+        {
+          "item_code": "GPS-E045",
+          "description": "Povidone K30 USP",
+          "quantity": 75.0,
+          "unit": "kg",
+          "unit_price": 22.0,
+          "line_total": 1650.0,
+          "extraction_confidence": 0.99
+        },
+        {
+          "item_code": "GPS-E067",
+          "description": "Sodium Starch Glycolate",
+          "quantity": 40.0,
+          "unit": "kg",
+          "unit_price": 19.5,
+          "line_total": 780.0,
+          "extraction_confidence": 0.99
+        }
+      ],
+      "subtotal": 11230.0,
+      "vat_amount": 2246.0,
+      "vat_rate": 0.2,
+      "total": 13476.0
+    },
+    "matching_results": {
+      "po_match_confidence": 0.99,
+      "matched_po": "PO-2024-004",
+      "match_method": "exact_po_reference",
+      "supplier_match": true,
+      "date_variance_days": null,
+      "line_items_matched": 3,
+      "line_items_total": 3,
+      "match_rate": 1.0,
+      "alternative_matches": []
+    },
+    "discrepancies": [
+      {
+        "type": "price_mismatch",
+        "severity": "medium",
+        "line_item_index": 0,
+        "field": "unit_price",
+        "invoice_value": 88.0,
+        "po_value": 80.0,
+        "variance_percentage": 10.0,
+        "details": "Ibuprofen BP 200mg: Invoice \u00a388.00 vs PO \u00a380.00 (10.0% difference)",
+        "recommended_action": "flag_for_review",
+        "confidence": 0.99
+      },
+      {
+        "type": "total_variance",
+        "severity": "medium",
+        "line_item_index": null,
+        "field": "total",
+        "invoice_value": 13476.0,
+        "po_value": 13176.0,
+        "variance_percentage": 2.2768670309653913,
+        "details": "Total variance: Invoice \u00a313476.00 vs PO \u00a313176.00 (\u00a3300.00 difference)",
+        "recommended_action": "flag_for_review",
+        "confidence": 0.99
+      }
+    ],
+    "recommended_action": "flag_for_review",
+    "risk_level": "medium",
+    "confidence": 0.92,
+    "agent_reasoning": "The extraction confidence (0.95) and PO match confidence (0.99) are high, satisfying the AUTO_APPROVE confidence thresholds. However, the invoice contains two medium\u2011severity discrepancies: a 10% price mismatch for Ibuprofen BP 200mg (exceeds the <2% variance allowed for auto\u2011approval) and a total variance of \u00a3300, which is about 2.3% of the PO total (also above the <2% minor variance limit). These variances fall into the 5\u201115% range defined for FLAG_FOR_REVIEW. Since the confidence is high but the discrepancies are beyond the minor\u2011only threshold, the appropriate action is to flag the invoice for manual review. The risk is assessed as medium due to the price overrun and total variance."
+  },
+  "agent_execution_trace": {
+    "document_intelligence_agent": {
+      "duration_ms": 44790.146350860596,
+      "confidence": 0.95,
+      "status": "success"
+    },
+    "matching_agent": {
+      "duration_ms": 1.7154216766357422,
+      "confidence": 0.99,
+      "status": "success"
+    },
+    "discrepancy_detection_agent": {
+      "duration_ms": 1.0497570037841797,
+      "confidence": 0.99,
+      "status": "success"
+    },
+    "resolution_recommendation_agent": {
+      "duration_ms": 43782.01699256897,
+      "confidence": 0.92,
+      "status": "success"
+    }
+  }
+}

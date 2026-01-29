@@ -1,0 +1,48 @@
+{
+  "invoice_id": null,
+  "processing_timestamp": "2026-01-29T14:38:55.861246Z",
+  "processing_duration_seconds": 87.78122591972351,
+  "document_info": {
+    "filename": "Invoice_2_Scanned.pdf",
+    "file_size_kb": 102.8857421875,
+    "page_count": 1,
+    "document_quality": "ocr_unavailable"
+  },
+  "processing_results": {
+    "extraction_confidence": 0.0,
+    "document_quality": "ocr_unavailable",
+    "extracted_data": {
+      "invoice_number": null,
+      "invoice_date": null,
+      "supplier_name": null,
+      "supplier_address": null,
+      "supplier_vat": null,
+      "po_reference": null,
+      "payment_terms": null,
+      "currency": "GBP",
+      "line_items": [],
+      "subtotal": 0.0,
+      "vat_amount": 0.0,
+      "vat_rate": 0.0,
+      "total": 0.0
+    },
+    "matching_results": {},
+    "discrepancies": [],
+    "recommended_action": "escalate_to_human",
+    "risk_level": "high",
+    "confidence": 0.95,
+    "agent_reasoning": "The extraction confidence is 0.0 and the OCR process could not retrieve any data (document quality = ocr_unavailable). There is no PO match and the PO match confidence is also 0.0. With no extracted fields, no discrepancies to evaluate, and no way to verify the invoice against a purchase order, the situation falls into the low-confidence, high-risk category that requires human intervention. Therefore, the appropriate action is to escalate to a human reviewer."
+  },
+  "agent_execution_trace": {
+    "document_intelligence_agent": {
+      "duration_ms": 44091.50242805481,
+      "confidence": 0.0,
+      "status": "failed"
+    },
+    "resolution_recommendation_agent": {
+      "duration_ms": 43686.24973297119,
+      "confidence": 0.95,
+      "status": "success"
+    }
+  }
+}
