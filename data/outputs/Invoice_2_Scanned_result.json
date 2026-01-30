@@ -1,7 +1,7 @@
 {
   "invoice_id": "BA-2024-2156",
-  "processing_timestamp": "2026-01-29T15:26:54.630797Z",
-  "processing_duration_seconds": 422.4331455230713,
+  "processing_timestamp": "2026-01-30T09:53:06.000038Z",
+  "processing_duration_seconds": 128.3677978515625,
   "document_info": {
     "filename": "Invoice_2_Scanned.pdf",
     "file_size_kb": 102.8857421875,
@@ -9,7 +9,7 @@
     "document_quality": "good"
   },
   "processing_results": {
-    "extraction_confidence": 0.8869031829842914,
+    "extraction_confidence": 0.85,
     "document_quality": "good",
     "extracted_data": {
       "invoice_number": "BA-2024-2156",
@@ -28,7 +28,7 @@
           "unit": "kg",
           "unit_price": 32.0,
           "line_total": 2400.0,
-          "extraction_confidence": 0.95
+          "extraction_confidence": 0.6
         },
         {
           "item_code": "BIO-943",
@@ -37,7 +37,7 @@
           "unit": "kg",
           "unit_price": 12.5,
           "line_total": 1250.0,
-          "extraction_confidence": 0.95
+          "extraction_confidence": 0.9
         },
         {
           "item_code": null,
@@ -69,26 +69,26 @@
     "recommended_action": "flag_for_review",
     "risk_level": "low",
     "confidence": 0.85,
-    "agent_reasoning": "The extraction confidence is 88.7%, which falls into the medium confidence range (70-89%). Although the PO matches exactly with a very high confidence (0.99) and there are no discrepancies, the extraction confidence does not meet the \u226590% threshold required for automatic approval. According to the decision criteria, medium confidence cases should be flagged for review, especially when the extraction confidence is below the auto\u2011approve threshold. The risk is low because the PO match is exact and there are no identified discrepancies, but a manual check is advisable to confirm the extracted data."
+    "agent_reasoning": "The extraction confidence is 0.85, which falls into the medium confidence range (70-89%). Although the PO matches exactly (confidence 0.99) and there are no discrepancies, the extraction confidence does not meet the \u226590% threshold required for AUTO_APPROVE. According to the decision criteria, medium confidence cases should be flagged for review, especially when the extraction confidence is below the high\u2011confidence threshold. The risk is low because the PO match is strong and there are no detected discrepancies."
   },
   "agent_execution_trace": {
     "document_intelligence_agent": {
-      "duration_ms": 378477.2651195526,
-      "confidence": 0.8869031829842914,
+      "duration_ms": 85136.3296508789,
+      "confidence": 0.85,
       "status": "success"
     },
     "matching_agent": {
-      "duration_ms": 77.80694961547852,
+      "duration_ms": 94.96569633483887,
       "confidence": 0.99,
       "status": "success"
     },
     "discrepancy_detection_agent": {
-      "duration_ms": 1.8913745880126953,
+      "duration_ms": 2.9938220977783203,
       "confidence": 0.99,
       "status": "success"
     },
     "resolution_recommendation_agent": {
-      "duration_ms": 43846.30346298218,
+      "duration_ms": 43122.2505569458,
       "confidence": 0.85,
       "status": "success"
     }

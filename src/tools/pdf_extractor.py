@@ -10,6 +10,13 @@ import numpy as np
 from typing import Tuple, List
 import io
 
+from src.config.logger import setup_logger
+from src.config.exception import AppException
+import sys
+
+# Initialize logger
+logger = setup_logger("PDFExtractor", "pdf_extractor.log")
+
 # Check for optional OCR dependencies (PyMuPDF + EasyOCR - no system deps needed!)
 PYMUPDF_AVAILABLE = False
 EASYOCR_AVAILABLE = False
@@ -18,14 +25,16 @@ EASYOCR_READER = None
 try:
     import fitz  # PyMuPDF
     PYMUPDF_AVAILABLE = True
+    logger.debug("PyMuPDF is available")
 except ImportError:
-    pass
+    logger.warning("PyMuPDF not available - OCR functionality limited")
 
 try:
     import easyocr
     EASYOCR_AVAILABLE = True
+    logger.debug("EasyOCR is available")
 except ImportError:
-    pass
+    logger.warning("EasyOCR not available - OCR functionality limited")
 
 
 class PDFExtractor:
@@ -40,6 +49,7 @@ class PDFExtractor:
     """
     
     def __init__(self):
+        logger.info("Initializing PDFExtractor")
         self.confidence_threshold = 0.7
         self._ocr_reader = None
         self._ocr_init_attempted = False
@@ -51,11 +61,11 @@ class PDFExtractor:
             if EASYOCR_AVAILABLE:
                 try:
                     import easyocr
-                    print("🔄 Initializing EasyOCR (first run may download models)...")
+                    logger.info("Initializing EasyOCR (first run may download models)...")
                     self._ocr_reader = easyocr.Reader(['en'], gpu=False, verbose=False)
-                    print("✅ EasyOCR initialized successfully")
+                    logger.info("EasyOCR initialized successfully")
                 except Exception as e:
-                    print(f"⚠️  Failed to initialize EasyOCR: {e}")
+                    logger.error(f"Failed to initialize EasyOCR: {e}")
         return self._ocr_reader
     
     def extract_text(self, pdf_path: str) -> Tuple[str, float, str]:
@@ -68,6 +78,7 @@ class PDFExtractor:
             - confidence: 0.0-1.0 confidence score
             - quality: "excellent", "good", "acceptable", "poor", or "ocr_unavailable"
         """
+        logger.info(f"Extracting text from: {pdf_path}")
         try:
             # Try direct text extraction first (works for digital PDFs)
             with pdfplumber.open(pdf_path) as pdf:
@@ -78,11 +89,13 @@ class PDFExtractor:
                         text += page_text + "\n"
                 
                 if text.strip():
+                    logger.info("Direct PDF extraction successful")
                     return text.strip(), 0.95, "excellent"
         except Exception as e:
-            print(f"⚠️  Direct PDF extraction failed: {e}")
+            logger.warning(f"Direct PDF extraction failed: {e}")
         
         # Fallback to OCR for scanned documents
+        logger.info("Falling back to OCR extraction")
         return self._ocr_extraction(pdf_path)
     
     def _ocr_extraction(self, pdf_path: str) -> Tuple[str, float, str]:
@@ -92,6 +105,7 @@ class PDFExtractor:
         """
         # Check for PyMuPDF
         if not PYMUPDF_AVAILABLE:
+            logger.error("PyMuPDF not installed - cannot perform OCR")
             return (
                 "[OCR EXTRACTION FAILED]\n"
                 "PyMuPDF not installed.\n\n"
@@ -102,6 +116,7 @@ class PDFExtractor:
         
         # Check for EasyOCR
         if not EASYOCR_AVAILABLE:
+            logger.error("EasyOCR not installed - cannot perform OCR")
             return (
                 "[OCR EXTRACTION FAILED]\n"
                 "EasyOCR not installed.\n\n"
@@ -113,6 +128,7 @@ class PDFExtractor:
         # Get or initialize OCR reader
         reader = self._get_ocr_reader()
         if reader is None:
+            logger.error("Failed to initialize EasyOCR reader")
             return (
                 "[OCR EXTRACTION FAILED]\n"
                 "Failed to initialize EasyOCR reader.",
@@ -128,9 +144,11 @@ class PDFExtractor:
             
             # Open PDF with PyMuPDF
             doc = fitz.open(pdf_path)
+            logger.debug(f"Opened PDF with {len(doc)} pages")
             
             for page_num in range(len(doc)):
                 page = doc[page_num]
+                logger.debug(f"Processing page {page_num + 1}")
                 
                 # Render page to image (300 DPI for good quality)
                 mat = fitz.Matrix(300/72, 300/72)  # 300 DPI
@@ -164,7 +182,10 @@ class PDFExtractor:
             avg_conf = np.mean(confidences) if confidences else 0.0
             quality = self._assess_quality(avg_conf)
             
+            logger.info(f"OCR extraction complete. Average confidence: {avg_conf:.2%}, Quality: {quality}")
+            
             if not full_text.strip():
+                logger.warning("No text could be extracted from the scanned document")
                 return (
                     "[OCR EXTRACTION FAILED]\n"
                     "No text could be extracted from the scanned document.",
@@ -175,6 +196,7 @@ class PDFExtractor:
             return full_text.strip(), avg_conf, quality
             
         except Exception as e:
+            logger.error(f"Error during OCR processing: {e}")
             return (
                 f"[OCR EXTRACTION FAILED]\n"
                 f"Error during OCR processing: {str(e)}",
@@ -195,6 +217,7 @@ class PDFExtractor:
     
     def extract_tables(self, pdf_path: str) -> List[List[List[str]]]:
         """Extract tables from PDF using pdfplumber"""
+        logger.info(f"Extracting tables from: {pdf_path}")
         try:
             with pdfplumber.open(pdf_path) as pdf:
                 tables = []
@@ -202,7 +225,9 @@ class PDFExtractor:
                     page_tables = page.extract_tables()
                     if page_tables:
                         tables.extend(page_tables)
+                logger.info(f"Extracted {len(tables)} tables")
                 return tables
         except Exception as e:
-            print(f"⚠️  Table extraction failed: {e}")
+            logger.error(f"Table extraction failed: {e}")
             return []
+

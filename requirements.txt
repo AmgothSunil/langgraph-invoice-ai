@@ -46,3 +46,7 @@ tenacity
 # Testing
 pytest
 pytest-asyncio
+
+# Frontend
+streamlit
+requests

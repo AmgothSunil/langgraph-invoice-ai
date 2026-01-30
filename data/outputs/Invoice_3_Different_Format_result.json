@@ -1,7 +1,7 @@
 {
   "invoice_id": "MC-INV-3421",
-  "processing_timestamp": "2026-01-29T15:33:57.106779Z",
-  "processing_duration_seconds": 88.1877110004425,
+  "processing_timestamp": "2026-01-30T09:55:14.375165Z",
+  "processing_duration_seconds": 88.36988353729248,
   "document_info": {
     "filename": "Invoice_3_Different_Format.pdf",
     "file_size_kb": 2.9326171875,
@@ -28,7 +28,7 @@
           "unit": "kg",
           "unit_price": 6.75,
           "line_total": 1350.0,
-          "extraction_confidence": 0.99
+          "extraction_confidence": 0.97
         },
         {
           "item_code": "MC-215",
@@ -37,7 +37,7 @@
           "unit": "kg",
           "unit_price": 45.0,
           "line_total": 2250.0,
-          "extraction_confidence": 0.99
+          "extraction_confidence": 0.97
         },
         {
           "item_code": "MC-376",
@@ -46,7 +46,7 @@
           "unit": "kg",
           "unit_price": 11.2,
           "line_total": 1680.0,
-          "extraction_confidence": 0.99
+          "extraction_confidence": 0.97
         },
         {
           "item_code": "MC-492",
@@ -55,7 +55,7 @@
           "unit": "kg",
           "unit_price": 28.5,
           "line_total": 855.0,
-          "extraction_confidence": 0.99
+          "extraction_confidence": 0.97
         }
       ],
       "subtotal": 6135.0,
@@ -78,26 +78,26 @@
     "recommended_action": "auto_approve",
     "risk_level": "none",
     "confidence": 0.96,
-    "agent_reasoning": "The extraction confidence is 0.95 (\u226590%) and the PO match is exact with a very high match confidence of 0.99. There are no discrepancies reported. This meets the AUTO_APPROVE criteria of high confidence extraction, exact PO match, and no variances, indicating minimal risk."
+    "agent_reasoning": "The extraction confidence is 0.95 (\u226590%) and the PO match is exact with a very high match confidence of 0.99. There are no discrepancies reported. This meets the AUTO_APPROVE criteria (high confidence, exact PO match, no variances). The risk is negligible, so the appropriate recommendation is to auto\u2011approve the invoice."
   },
   "agent_execution_trace": {
     "document_intelligence_agent": {
-      "duration_ms": 45389.29605484009,
+      "duration_ms": 45311.23471260071,
       "confidence": 0.95,
       "status": "success"
     },
     "matching_agent": {
-      "duration_ms": 2.6764869689941406,
+      "duration_ms": 3.2279491424560547,
       "confidence": 0.99,
       "status": "success"
     },
     "discrepancy_detection_agent": {
-      "duration_ms": 1.3494491577148438,
+      "duration_ms": 3.6437511444091797,
       "confidence": 0.99,
       "status": "success"
     },
     "resolution_recommendation_agent": {
-      "duration_ms": 42785.874366760254,
+      "duration_ms": 43043.4684753418,
       "confidence": 0.96,
       "status": "success"
     }
